@@ -1,12 +1,12 @@
 // ==========================================================================
-// Project:   Tex
-// Copyright: ©2010 My Company, Inc.
+// Project:   TeXSC
+// Copyright: ©2010 Maurits Lamers
 // ==========================================================================
-/*globals Tex */
+/*globals TeXSC */
 
 /** @namespace
 
-  My cool new framework.  Describe your framework.
+  A simple SC framework for generating LaTeX documents.
   
   @extends SC.Object
 */
@@ -16,6 +16,20 @@ TeXSC = SC.Object.create(
   NAMESPACE: 'Tex',
   VERSION: '0.1.0',
 
-  // TODO: Add global constants or singleton objects needed by your app here.
+  FONTFAM_SS: 'sansserif',
+  FONTFAM_TW: 'typewriter',
+  FONTFAM_RM: 'roman'
+  
+/*  
+  '-4': '\\tiny', // \tiny
+  '-3': '\\scriptsize',
+  '-2': '\\footnotesize', // \footnotesize
+  '-1': '\\small', // \small
+  '0': '', // 
+  '1': '\\large', // \large
+  '2': '\\Large', // \Large
+  '3': '\\LARGE', // \LARGE
+  '4': '\\huge', // \huge
+  '5': '\\Huge' // \Huge */
 
 }) ;

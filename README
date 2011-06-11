@@ -1,0 +1,48 @@
+TeXSC
+
+A small and simple (La)TeX generating framework for use with SC applications.
+
+Currently limited to article class documents, TeXSC can help you generate LaTeX 
+documents on the client. TeXSC only generates LaTeX code, which can then be sent
+to the server for processing.
+
+TeXSC is quite easy to use:
+
+Creating a document:
+
+    var myDoc = TeXSC.Article.create({
+      docType: 'a4paper',
+      font: 'helvetica',
+      fontSize: '11pt',
+      fontFamily: 'roman',
+      isSloppy: YES
+    });
+
+Adding packages: 
+
+    myDoc.addPackage('mathpazo');
+
+Adding a line:
+
+    myDoc.addLine("this is my text",fontinfo,alignInfo);
+
+fontinfo is an override or addition to the defaults defined in the document creation. 
+fontinfo can be generated using:
+
+    var myBoldFont = doc.createFontInfo(size,fontfaces,fontfamily);
+
+in which size is a number (-4 to +5) of which 0 is the default font size.
+
+Adding a paragraph:
+
+    myDoc.addParagraph(text,fontinfo,aligninfo,shouldIndent);
+
+shouldIndent is a boolean denoting whether the first line of a paragraph should be indented.
+
+Inserting vertical space:
+
+    myDoc.addVSpaceMm(10);
+    myDoc.addVSpaceCm(1);
+    myDoc.addVSpaceText('1cm');
+
+

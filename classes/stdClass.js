@@ -51,6 +51,7 @@ TeXSC.stdClass = SC.Object.extend({
    addPackage: function(packageName, params){
       if(!this._userPackages) this._userPackages = [];
       this._userPackages.push(this._createPackageObj(packageName,params));
+      return this;
    },
    
    _generateDocumentClass: function(){
