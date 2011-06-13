@@ -49,6 +49,8 @@ TeXSC.stdClass = SC.Object.extend({
     return { packageName: packageName, params: params };
   },
 
+  // future idea: create mixins with package functions
+  // now the graphic functions are on the stdClass, but it is easy to mixin the stuff at runtime
   addPackage: function(packageName, params){
     if(!this._userPackages) this._userPackages = [];
     this._userPackages.push(this._createPackageObj(packageName,params));
@@ -274,6 +276,29 @@ TeXSC.stdClass = SC.Object.extend({
     }
     return ret;
   },
+  
+  begin: function(tagname){
+    var ret = this._applyCmd("begin",tagname);
+    return this.add(ret);
+  },
+  
+  end: function(tagname){
+    var ret = this._applyCmd("end",tagname);
+    return this.add(ret);
+  },
+  
+  add: function(texCode){
+    var content = this.get('content'),ret;
+    if(texCode){
+      ret = content? content + texCode: texCode;
+      this.set('content',ret);
+    }
+    return this;
+  },
+  
+  wrapWith: function(tagname,wrappedContent){
+    return this.begin(tagname).add(wrappedContent).end(tagname);
+  },
 
   addLine: function(text,fontInfo,alignment,shouldIndent){
     //work from inner to outer layers
@@ -285,10 +310,7 @@ TeXSC.stdClass = SC.Object.extend({
       ret = this._applyAlignment(ret,alignment);   
     }
     ret += "\n"; // if text === "", just do a newline
-    var curContent = this.get('content');
-    if(!curContent) this.set('content',ret);
-    else this.set('content', curContent + ret);
-    return this;
+    return this.add(ret);
   },
 
   addParagraph: function(text,fontInfo,alignment,shouldIndent){
@@ -297,37 +319,25 @@ TeXSC.stdClass = SC.Object.extend({
     ret += "\\\\";
     ret = this._applyAlignment(ret,alignment);      
     ret += "\n\\\\\n";
-    var curContent = this.get('content');
-    if(!curContent) this.set('content',ret);
-    else this.set('content', curContent + ret);
-    return this;
+    return this.add(ret);
   },
 
   addVSpaceMm: function(distanceInMM){
     // adds a vspace of dist mm
     var ret = this._applyCmd("\\vspace",distanceInMM + "mm") + "\n";
-    var curContent = this.get('content');
-    if(!curContent) this.set('content',ret);
-    else this.set('content', curContent + ret);
-    return this;
+    return this.add(ret);
   },
 
   addVSpaceCm: function(distanceInCM){
     // adds a vspace of dist cm
     var ret = this._applyCmd("\\vspace",distanceInCM + "cm") + "\n";
-    var curContent = this.get('content');
-    if(!curContent) this.set('content',ret);
-    else this.set('content', curContent + ret);
-    return this;
+    return this.add(ret);
   },
 
   addVSpaceText: function(text){
     // adds a vspace of dist text
     var ret = this._applyCmd("\\vspace",text) + "\n";
-    var curContent = this.get('content');
-    if(!curContent) this.set('content',ret);
-    else this.set('content', curContent + ret);
-    return this;
+    return this.add(ret);
   },
 
   // opts is an object with the following recognized options
@@ -350,9 +360,7 @@ TeXSC.stdClass = SC.Object.extend({
     if(opts.angle) params.push("angle=" + opts.angle);
     if(opts.viewport) params.push("viewport=" + opts.viewport.join(" "));
     ret = this._applyCmd(command,path,opts);
-    ret = curContent? curContent + ret : ret;
-    this.set('content',ret);
-    return this;
+    return this.add(ret);
   },
   
   insertScaleBox: function(scale,scaleBoxContent){
@@ -361,12 +369,8 @@ TeXSC.stdClass = SC.Object.extend({
     var ret;
     
     if(!this.hasPackage('graphicx')) this.addPackage('graphicx');
-    if(scaleBoxContent){
-      ret = this._applyCmd("\\scalebox", scaleBoxContent, params);
-      ret = content? content + ret: ret;
-      this.set('content',ret);
-    }
-    return this;
+    if(scaleBoxContent) ret = this._applyCmd("\\scalebox", scaleBoxContent, params);
+    return this.add(ret);
   },
   
   insertRotateBox: function(angle,rotateBoxContent){
@@ -374,33 +378,22 @@ TeXSC.stdClass = SC.Object.extend({
     var ret, content = this.get('content');
     
     if(!this.hasPackage('graphicx')) this.addPackage('graphicx');
-    if(rotateBoxContent){
-      ret = this._applyCmd("\\rotatebox", rotateBoxContent, params);
-      ret = content? content + ret: ret;
-      this.set('content',ret);
-    }
-    return this;
+    if(rotateBoxContent) ret = this._applyCmd("\\rotatebox", rotateBoxContent, params);
+    return this.add(ret);
   },
   
   insertReflectBox: function(reflectBoxContent){
     var ret, content = this.get('content');
     
     if(!this.hasPackage('graphicx')) this.addPackage('graphicx');
-    if(reflectBoxContent){
-      ret = this.applyCmd("\\reflectbox",reflectBoxContent);
-      ret = content? content + ret: ret;
-      this.set('content',ret);
-    }
-    return this;
+    if(reflectBoxContent) ret = this.applyCmd("\\reflectbox",reflectBoxContent);
+    return this.add(ret);
   },
   
   insertNewPage: function(){
     var content = this.get('content');
-    var ret = this._applyCmd("\\newpage");
     if(!content) console.log('weird... setting a new page without previous content?');
-    ret = content? content + ret: ret;
-    this.set('content',ret);
-    return this;
+    return this.add(this._applyCmd("\\newpage"));
   }
 
 });
