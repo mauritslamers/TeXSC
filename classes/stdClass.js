@@ -392,6 +392,15 @@ TeXSC.stdClass = SC.Object.extend({
       this.set('content',ret);
     }
     return this;
+  },
+  
+  insertNewPage: function(){
+    var content = this.get('content');
+    var ret = this._applyCmd("\\newpage");
+    if(!content) console.log('weird... setting a new page without previous content?');
+    ret = content? content + ret: ret;
+    this.set('content',ret);
+    return this;
   }
 
 });
