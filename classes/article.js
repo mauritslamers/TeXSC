@@ -1,9 +1,11 @@
+/*globals TeXSC*/
+
 /*
 Document class article
 */
 sc_require('classes/stdClass');
 
-TeXSC.Article = TeX.stdClass.extend({
+TeXSC.Article = TeXSC.stdClass.extend({
    
    _docClass: 'article',
    
@@ -20,11 +22,11 @@ TeXSC.Article = TeX.stdClass.extend({
    isSloppy: YES,
    
    _stdPackages: [ 
-      TeX.stdClass.prototype._createPackageObj('geometry', 'margin=3cm'),
-      TeX.stdClass.prototype._createPackageObj('hyperref'),
-      TeX.stdClass.prototype._createPackageObj('graphicx'),
-      TeX.stdClass.prototype._createPackageObj('hyphenat', 'none'),
-      TeX.stdClass.prototype._createPackageObj('amsmath')
+      TeXSC.stdClass.prototype._createPackageObj('geometry', 'margin=3cm'),
+      TeXSC.stdClass.prototype._createPackageObj('hyperref'),
+      TeXSC.stdClass.prototype._createPackageObj('graphicx'),
+      TeXSC.stdClass.prototype._createPackageObj('hyphenat', 'none'),
+      TeXSC.stdClass.prototype._createPackageObj('amsmath')
    ]
    
 });
