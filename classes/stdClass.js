@@ -17,6 +17,7 @@ TeXSC.stdClass = SC.Object.extend({
   //hardcode as the create function is not yet available
 
   _stdPackages: null, // a set of standard packages to include for a specific document class
+  
   // an array with objects { packageName: '', params: ''}
   _userPackages: null, // a set of packages the user wants to include too                   
 
@@ -52,14 +53,28 @@ TeXSC.stdClass = SC.Object.extend({
   // future idea: create mixins with package functions
   // now the graphic functions are on the stdClass, but it is easy to mixin the stuff at runtime
   addPackage: function(packageName, params){
+    var package;
     if(!this._userPackages) this._userPackages = [];
-    this._userPackages.push(this._createPackageObj(packageName,params));
+    if(this.hasPackage(packageName)){
+      package = this._userPackages.findProperty('packageName',packageName);
+      if(package) package.params = params;
+      else this._stdPackages.findProperty('packageName',packageName).params = params;
+    }
+    else this._userPackages.push(this._createPackageObj(packageName,params));
     return this;
   },
   
-  hasPackage: function(packageName){
+  hasUserPackage: function(packageName){
     if(!this._userPackages) return false;
-    return !!this._userPackages.findProperty('packageName',packageName);
+    else return !!this._userPackages.findProperty('packageName',packageName);
+  },
+  
+  hasStdPackage: function(packageName){
+    return !!this._stdPackages.findProperty('packageName',packageName);
+  },
+  
+  hasPackage: function(packageName){
+    return this.hasUserPackage(packageName) || this.hasStdPackage(packageName);
   },
 
   _generateDocumentClass: function(){
@@ -108,12 +123,12 @@ TeXSC.stdClass = SC.Object.extend({
   generateDefaultFontFamily: function(){
     var fontFam = this.get('fontFamily');
     if(SC.typeOf(fontFam) === 'string'){
-      var ret = "\\renewcommand { \\familydefault } ";
+      var ret = "\\renewcommand{\\familydefault}";
       switch(fontFam.toLowerCase()){
-        case 'roman': return ret + " { \\rmdefault } \n"; 
-        case 'sansserif': return ret + " { \\sfdefault } \n"; 
-        case 'sans serif': return ret + " { \\sfdefault } \n"; 
-        case 'typewriter': return ret + " { \\ttdefault } \n"; 
+        case 'roman': return ret + "{\\rmdefault}\n"; 
+        case 'sansserif': return ret + "{\\sfdefault}\n"; 
+        case 'sans serif': return ret + "{\\sfdefault}\n"; 
+        case 'typewriter': return ret + "{\\ttdefault}\n"; 
         default: return NO;
       }
     }
@@ -133,10 +148,10 @@ TeXSC.stdClass = SC.Object.extend({
 
     if(ret){
       ret += this._parsePackages(this._defaultPackages); // always include the default
-      ret = defaultFontFamily? ret + defaultFontFamily + '\n': ret;
       ret = this._fontEncoding? ret + "\\fontencoding{" + this._fontEncoding + "}\n": ret;
       ret += this._parsePackages(stdPackages) + '\n';
       ret = userPackages? ret + this._parsePackages(userPackages) + '\n': ret; // add userPackages if exists
+      ret = defaultFontFamily? ret + defaultFontFamily + '\n': ret;
       ret = preamble? ret + preamble + '\n': ret;
       ret = pageStyle? ret + "\\pagestyle{" + pageStyle + "}\n": ret;
       ret = isSloppy? ret + "\\sloppy \n": ret;
@@ -211,14 +226,20 @@ TeXSC.stdClass = SC.Object.extend({
   },
 
   _specialChars: {
-    '&': '\\&'
+    '&': '\\&',
+    '%': '\\%'
   },
 
   _replaceSpecialChars: function(text){
     var ret = text;
+    var reg;
+    if(!ret.replace){
+      SC.Logger.log("ret doesn't have replace? ret is: " + SC.inspect(text));
+    }
     var specChars = this._specialChars;
     for(var i in specChars){
-      ret = ret.replace(i,specChars[i]);
+      reg = new RegExp(i,'g');
+      ret = ret.replace(reg,specChars[i]);
     }
     return ret;     
   },
@@ -267,7 +288,7 @@ TeXSC.stdClass = SC.Object.extend({
   },
 
   _applyTextInfo: function(text,fontInfo,shouldIndent){
-    var ret = text;
+    var ret = (SC.typeOf(text) !== 'string')? text.toString(): text;
     ret = this._replaceSpecialChars(ret);
     ret = this._applyFontInfo(ret,fontInfo);
 
@@ -278,32 +299,55 @@ TeXSC.stdClass = SC.Object.extend({
   },
   
   begin: function(tagname){
-    var ret = this._applyCmd("begin",tagname);
+    var ret = this._applyCmd("\\begin",tagname);
     return this.add(ret);
   },
   
   end: function(tagname){
-    var ret = this._applyCmd("end",tagname);
+    var ret = this._applyCmd("\\end",tagname);
     return this.add(ret);
   },
   
   add: function(texCode){
     var content = this.get('content'),ret;
     if(texCode){
-      ret = content? content + texCode: texCode;
+      ret = content? content + texCode + "\n": texCode + "\n";
       this.set('content',ret);
     }
     return this;
   },
   
+  startCommand: function(cmd,options){
+    var opts,ret;
+    ret = "\\" + cmd;
+    if(options){
+      if(options instanceof Array) ret += "[" + options.join(",") + "]";
+      else ret += "[" + options + "]";
+    }
+    return this.add(ret + "{");
+  },
+  
+  endCommand: function(cmd){
+    return this.add("}");
+  },
+  
   wrapWith: function(tagname,wrappedContent){
     return this.begin(tagname).add(wrappedContent).end(tagname);
+  },
+  
+  addText: function(text,fontInfo,alignment,shouldIndent){
+    var ret = (SC.typeOf(text) !== 'string')? text.toString(): text;
+    if(text !== ""){
+      ret = this._applyTextInfo(ret,fontInfo,shouldIndent);
+      ret = this._applyAlignment(ret,alignment);
+    }
+    return this.add(ret);
   },
 
   addLine: function(text,fontInfo,alignment,shouldIndent){
     //work from inner to outer layers
     // so parse the text on special characters 
-    var ret = text;
+    var ret = (SC.typeOf(text) !== 'string')? text.toString(): text;
     if(text !== ""){
       ret = this._applyTextInfo(text,fontInfo,shouldIndent);
       ret += "\\\\"; //add a line break
@@ -351,7 +395,7 @@ TeXSC.stdClass = SC.Object.extend({
   //}
   includeGraphics: function(path,opts){
     if(!this.hasPackage('graphicx')) this.addPackage('graphicx');
-    var command = (opts && opts.isClipping)? '\\includeGraphics*': '\\includeGraphics';
+    var command = (opts && opts.isClipping)? '\\includegraphics*': '\\includegraphics';
     var curContent = this.get('content');
     var params = [], ret;
     if(opts.scale) params.push("scale=" + opts.scale);
@@ -359,7 +403,7 @@ TeXSC.stdClass = SC.Object.extend({
     if(opts.height) params.push("height=" + opts.height);
     if(opts.angle) params.push("angle=" + opts.angle);
     if(opts.viewport) params.push("viewport=" + opts.viewport.join(" "));
-    ret = this._applyCmd(command,path,opts);
+    ret = this._applyCmd(command,path,params);
     return this.add(ret);
   },
   
